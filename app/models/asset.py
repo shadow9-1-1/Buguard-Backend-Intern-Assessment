@@ -3,6 +3,7 @@ import enum
 from sqlalchemy import Column, String, DateTime, JSON, Enum as SQLAlchemyEnum, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 class AssetType(str, enum.Enum):
@@ -33,6 +34,19 @@ class Asset(Base):
 
     __table_args__ = (
         UniqueConstraint('type', 'value', name='_type_value_uc'),
+    )
+
+    outgoing_relationships = relationship(
+        'AssetRelationship',
+        foreign_keys='AssetRelationship.from_asset_id',
+        back_populates='from_asset',
+        cascade='all, delete-orphan'
+    )
+    incoming_relationships = relationship(
+        'AssetRelationship',
+        foreign_keys='AssetRelationship.to_asset_id',
+        back_populates='to_asset',
+        cascade='all, delete-orphan'
     )
 
     def __repr__(self):
