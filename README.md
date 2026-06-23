@@ -35,7 +35,16 @@ This repository contains the backend assessment for the Buguard internship progr
 ### 3. Database Setup
 - Ensure you have a PostgreSQL database created with the name specified in your `.env` file (e.g., `darkatlas`).
 
-### 4. Running the Application
+### 4. Running the Application with Docker (Recommended)
+- Ensure Docker and Docker Compose are installed.
+- From the project root, run:
+  ```bash
+  docker-compose up --build
+  ```
+- The application will be available at `http://127.0.0.1:8000`.
+- API documentation can be found at `http://127.0.0.1:8000/docs`.
+
+### 5. Running the Application Locally
 - Run the FastAPI server:
   ```bash
   uvicorn app.main:app --reload
