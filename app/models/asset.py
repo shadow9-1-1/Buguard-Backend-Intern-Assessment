@@ -1,9 +1,17 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, JSON, Enum as SQLAlchemyEnum
+import enum
+from sqlalchemy import Column, String, DateTime, JSON, Enum as SQLAlchemyEnum, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from app.db.base import Base
-import enum
+
+class AssetType(str, enum.Enum):
+    DOMAIN = "domain"
+    SUBDOMAIN = "subdomain"
+    IP_ADDRESS = "ip_address"
+    SERVICE = "service"
+    CERTIFICATE = "certificate"
+    TECHNOLOGY = "technology"
 
 class AssetStatus(str, enum.Enum):
     ACTIVE = "active"
@@ -11,32 +19,21 @@ class AssetStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 class Asset(Base):
-    __abstract__ = True
+    __tablename__ = 'assets'
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    first_seen = Column(DateTime(timezone=True), server_default=func.now())
-    last_seen = Column(DateTime(timezone=True), onupdate=func.now())
-    status = Column(SQLAlchemyEnum(AssetStatus), default=AssetStatus.ACTIVE)
-    tags = Column(JSON, default=[])
-    metadata = Column(JSON, default={})
+    type = Column(SQLAlchemyEnum(AssetType), nullable=False, index=True)
+    value = Column(String, nullable=False, index=True)
+    status = Column(SQLAlchemyEnum(AssetStatus), default=AssetStatus.ACTIVE, nullable=False, index=True)
+    source = Column(String, index=True)
+    tags = Column(JSON, default=list)
+    metadata = Column(JSON, default=dict)
+    first_seen = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-class Domain(Asset):
-    name = Column(String, unique=True, index=True, nullable=False)
+    __table_args__ = (
+        UniqueConstraint('type', 'value', name='_type_value_uc'),
+    )
 
-class Subdomain(Asset):
-    name = Column(String, unique=True, index=True, nullable=False)
-
-class IPAddress(Asset):
-    address = Column(String, unique=True, index=True, nullable=False)
-
-class Service(Asset):
-    port = Column(String, nullable=False)
-    name = Column(String)
-    description = Column(String)
-
-class Certificate(Asset):
-    pass
-
-class Technology(Asset):
-    name = Column(String, index=True, nullable=False)
-    version = Column(String)
-    description = Column(String)
+    def __repr__(self):
+        return f"<Asset(type='{self.type}', value='{self.value}')>"
