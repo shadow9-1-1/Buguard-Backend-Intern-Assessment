@@ -99,3 +99,17 @@ def import_assets(
     Invalid or duplicate records are skipped and reported in the summary.
     """
     return asset_service.bulk_import_assets(db=db, records=payload.assets)
+
+@router.post("/{asset_id}/sight", response_model=AssetResponse, status_code=status.HTTP_200_OK)
+def record_sighting(
+    asset_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Record a sighting for an asset.
+    - Updates last_seen to now.
+    - Reactivates the asset if its status is stale.
+    - first_seen is never modified.
+    - Returns 400 if the asset is archived.
+    """
+    return asset_service.record_sighting(db=db, asset_id=asset_id)

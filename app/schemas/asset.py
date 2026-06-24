@@ -53,8 +53,8 @@ class ImportError(BaseModel):
 class ImportSummary(BaseModel):
     total: int
     imported: int
+    merged: int
     skipped: int
-    duplicates: int
     errors: List[ImportError]
 
 class AssetImportRequest(BaseModel):

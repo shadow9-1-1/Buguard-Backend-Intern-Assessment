@@ -87,8 +87,8 @@ class AssetService:
     def bulk_import_assets(self, db: Session, records: list) -> ImportSummary:
         total = len(records)
         imported = 0
+        merged = 0
         skipped = 0
-        duplicates = 0
         errors = []
 
         for idx, raw in enumerate(records):
@@ -105,12 +105,17 @@ class AssetService:
 
             existing = asset_repo.get_by_type_and_value(db, asset_in.type, asset_in.value)
             if existing:
-                duplicates += 1
-                errors.append(ImportError(
-                    index=idx,
-                    record=raw,
-                    reason="Duplicate: asset with this type and value already exists"
-                ))
+                # Merge tags, metadata, and refresh last_seen instead of skipping
+                try:
+                    asset_repo.merge_duplicate(db, existing, asset_in)
+                    merged += 1
+                except Exception as e:
+                    skipped += 1
+                    errors.append(ImportError(
+                        index=idx,
+                        record=raw,
+                        reason=f"Merge error: {str(e)}"
+                    ))
                 continue
 
             try:
@@ -127,9 +132,20 @@ class AssetService:
         return ImportSummary(
             total=total,
             imported=imported,
+            merged=merged,
             skipped=skipped,
-            duplicates=duplicates,
             errors=errors
         )
+
+    def record_sighting(self, db: Session, asset_id: uuid.UUID):
+        """Record a sighting: update last_seen and reactivate stale assets."""
+        db_asset = self.get_asset(db, asset_id)  # raises 404 if not found
+        if db_asset.status.value == "archived":
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot record a sighting for an archived asset"
+            )
+        return asset_repo.record_sighting(db, db_asset)
 
 asset_service = AssetService()

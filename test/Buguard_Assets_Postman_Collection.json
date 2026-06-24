@@ -570,8 +570,8 @@
           "listen": "preRequest",
           "script": {
             "exec": [
-              "// Store a known fixed value to re-import",
-              "pm.environment.set('dup_value', 'duplicate-test-fixed.com');"
+              "// This seeds a fixed asset so the next request can merge into it",
+              "pm.environment.set('dedup_value', 'dedup-test-fixed-' + Date.now() + '.com');"
             ],
             "type": "text/javascript"
           }
@@ -586,16 +586,12 @@
               "",
               "var jsonData = pm.response.json();",
               "",
-              "pm.test(\"Nothing new imported (all duplicates)\", function () {",
-              "    pm.expect(jsonData.imported).to.eql(0);",
+              "pm.test(\"Asset seeded (imported = 1)\", function () {",
+              "    pm.expect(jsonData.imported).to.eql(1);",
               "});",
               "",
-              "pm.test(\"All records counted as duplicates\", function () {",
-              "    pm.expect(jsonData.duplicates).to.be.above(0);",
-              "});",
-              "",
-              "pm.test(\"Total matches sent records\", function () {",
-              "    pm.expect(jsonData.total).to.eql(jsonData.imported + jsonData.skipped + jsonData.duplicates);",
+              "pm.test(\"Nothing merged yet\", function () {",
+              "    pm.expect(jsonData.merged).to.eql(0);",
               "});"
             ],
             "type": "text/javascript"
@@ -607,7 +603,325 @@
         "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"duplicate-test-fixed.com\", \"status\": \"active\"}\n  ]\n}"
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"{{dedup_value}}\", \"status\": \"active\", \"tags\": [\"original\"], \"metadata\": {\"source\": \"seed\", \"priority\": 1}}\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/import",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "import"]
+        }
+      }
+    },
+    {
+      "name": "9b. Deduplication - Re-import same asset (merge tags & metadata)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Nothing new imported (was duplicate)\", function () {",
+              "    pm.expect(jsonData.imported).to.eql(0);",
+              "});",
+              "",
+              "pm.test(\"Duplicate was merged (merged = 1)\", function () {",
+              "    pm.expect(jsonData.merged).to.eql(1);",
+              "});",
+              "",
+              "pm.test(\"No records skipped\", function () {",
+              "    pm.expect(jsonData.skipped).to.eql(0);",
+              "});",
+              "",
+              "pm.test(\"Total = imported + merged + skipped\", function () {",
+              "    pm.expect(jsonData.total).to.eql(jsonData.imported + jsonData.merged + jsonData.skipped);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"{{dedup_value}}\", \"status\": \"stale\", \"tags\": [\"merged-tag\", \"extra\"], \"metadata\": {\"source\": \"reimport\", \"confidence\": 99}}\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/import",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "import"]
+        }
+      }
+    },
+    {
+      "name": "9c. Deduplication - Verify tags & metadata merged on asset",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": ["// asset_id should already be set from test 1 if using the same env"],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Tags from both imports are present (union)\", function () {",
+              "    var tags = jsonData.items.length > 0 ? jsonData.items[0].tags : [];",
+              "    pm.expect(tags).to.include('original');",
+              "    pm.expect(tags).to.include('merged-tag');",
+              "    pm.expect(tags).to.include('extra');",
+              "});",
+              "",
+              "pm.test(\"Metadata was merged (new key added, existing key overwritten)\", function () {",
+              "    var meta = jsonData.items.length > 0 ? jsonData.items[0].metadata : {};",
+              "    pm.expect(meta).to.have.property('source');",
+              "    pm.expect(meta.source).to.eql('reimport');",
+              "    pm.expect(meta).to.have.property('priority');",
+              "    pm.expect(meta).to.have.property('confidence');",
+              "    pm.expect(meta.confidence).to.eql(99);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/?search={{dedup_value}}&size=1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""],
+          "query": [
+            {"key": "search", "value": "{{dedup_value}}"},
+            {"key": "size", "value": "1"}
+          ]
+        }
+      }
+    }
+  ],
+  "item_lifecycle": "--- lifecycle tests appended below ---",
+  "item": [
+    {
+      "name": "10a. Lifecycle - Create asset and capture first_seen",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"first_seen is set on creation\", function () {",
+              "    pm.expect(d.first_seen).to.exist;",
+              "});",
+              "pm.test(\"last_seen is set on creation\", function () {",
+              "    pm.expect(d.last_seen).to.exist;",
+              "});",
+              "pm.test(\"Status is active\", function () {",
+              "    pm.expect(d.status).to.eql('active');",
+              "});",
+              "pm.environment.set('lifecycle_asset_id', d.id);",
+              "pm.environment.set('lifecycle_first_seen', d.first_seen);",
+              "pm.environment.set('lifecycle_last_seen', d.last_seen);",
+              "pm.environment.set('lifecycle_value', d.value);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"domain\",\n  \"value\": \"lifecycle-{{$timestamp}}.com\",\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "10b. Lifecycle - Record sighting updates last_seen",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"first_seen is UNCHANGED (immutable)\", function () {",
+              "    pm.expect(d.first_seen).to.eql(pm.environment.get('lifecycle_first_seen'));",
+              "});",
+              "pm.test(\"last_seen is updated after sighting\", function () {",
+              "    var before = new Date(pm.environment.get('lifecycle_last_seen'));",
+              "    var after  = new Date(d.last_seen);",
+              "    pm.expect(after >= before).to.be.true;",
+              "});",
+              "pm.environment.set('lifecycle_last_seen', d.last_seen);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{lifecycle_asset_id}}/sight",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{lifecycle_asset_id}}", "sight"]
+        }
+      }
+    },
+    {
+      "name": "10c. Lifecycle - Stale asset reactivated by sighting",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// First mark the asset as stale via PATCH (done inline by the test runner before this request)"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Status is reactivated to active\", function () {",
+              "    pm.expect(d.status).to.eql('active');",
+              "});",
+              "pm.test(\"first_seen is still unchanged\", function () {",
+              "    pm.expect(d.first_seen).to.eql(pm.environment.get('lifecycle_first_seen'));",
+              "});",
+              "pm.test(\"last_seen updated on reactivation\", function () {",
+              "    pm.expect(d.last_seen).to.exist;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{lifecycle_asset_id}}/sight",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{lifecycle_asset_id}}", "sight"]
+        }
+      }
+    },
+    {
+      "name": "10c-pre. Lifecycle - Mark asset stale (before reactivation test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Asset is now stale\", function () {",
+              "    pm.expect(pm.response.json().status).to.eql('stale');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\": \"stale\"}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{lifecycle_asset_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{lifecycle_asset_id}}"]
+        }
+      }
+    },
+    {
+      "name": "10d. Lifecycle - Archived asset blocks sighting (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400 for archived asset\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"Error detail mentions archived\", function () {",
+              "    pm.expect(pm.response.json().detail.toLowerCase()).to.include('archived');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{asset_id}}/sight",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{asset_id}}", "sight"]
+        }
+      }
+    },
+    {
+      "name": "10e. Lifecycle - Stale asset reactivated via bulk import merge",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Stale asset was merged (not skipped)\", function () {",
+              "    pm.expect(d.merged).to.be.above(0);",
+              "});",
+              "pm.test(\"Nothing counted as error\", function () {",
+              "    pm.expect(d.skipped).to.eql(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"{{lifecycle_value}}\", \"status\": \"active\", \"tags\": [\"reimported\"]}\n  ]\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/assets/import",
@@ -624,6 +938,26 @@
     },
     {
       "key": "asset_id",
+      "value": ""
+    },
+    {
+      "key": "dedup_value",
+      "value": ""
+    },
+    {
+      "key": "lifecycle_asset_id",
+      "value": ""
+    },
+    {
+      "key": "lifecycle_first_seen",
+      "value": ""
+    },
+    {
+      "key": "lifecycle_last_seen",
+      "value": ""
+    },
+    {
+      "key": "lifecycle_value",
       "value": ""
     }
   ]
