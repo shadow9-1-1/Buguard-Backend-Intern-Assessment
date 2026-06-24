@@ -457,6 +457,164 @@
           "path": ["api", "v1", "assets", "00000000-0000-0000-0000-000000000000"]
         }
       }
+    },
+    {
+      "name": "8a. Bulk Import - Happy Path",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Summary has required fields\", function () {",
+              "    pm.expect(jsonData).to.have.property('total');",
+              "    pm.expect(jsonData).to.have.property('imported');",
+              "    pm.expect(jsonData).to.have.property('skipped');",
+              "    pm.expect(jsonData).to.have.property('duplicates');",
+              "    pm.expect(jsonData).to.have.property('errors');",
+              "});",
+              "",
+              "pm.test(\"Total equals number of records sent\", function () {",
+              "    pm.expect(jsonData.total).to.eql(3);",
+              "});",
+              "",
+              "pm.test(\"All valid records are imported\", function () {",
+              "    pm.expect(jsonData.imported).to.eql(3);",
+              "});",
+              "",
+              "pm.test(\"No records skipped\", function () {",
+              "    pm.expect(jsonData.skipped).to.eql(0);",
+              "});",
+              "",
+              "pm.test(\"Errors list is empty\", function () {",
+              "    pm.expect(jsonData.errors).to.be.an('array').that.is.empty;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"bulk-import-1-{{$timestamp}}.com\", \"status\": \"active\", \"tags\": [\"bulk\"]},\n    {\"type\": \"ip\", \"value\": \"192.168.{{$randomInt}}.1\", \"status\": \"active\", \"tags\": [\"bulk\"]},\n    {\"type\": \"url\", \"value\": \"https://bulk-import-3-{{$timestamp}}.com/path\", \"status\": \"active\", \"tags\": [\"bulk\"]}\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/import",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "import"]
+        }
+      }
+    },
+    {
+      "name": "8b. Bulk Import - Mixed Valid and Invalid",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Total equals 3 records sent\", function () {",
+              "    pm.expect(jsonData.total).to.eql(3);",
+              "});",
+              "",
+              "pm.test(\"Valid records are imported\", function () {",
+              "    pm.expect(jsonData.imported).to.be.above(0);",
+              "});",
+              "",
+              "pm.test(\"Invalid records are skipped\", function () {",
+              "    pm.expect(jsonData.skipped).to.be.above(0);",
+              "});",
+              "",
+              "pm.test(\"Errors contain details for skipped records\", function () {",
+              "    pm.expect(jsonData.errors.length).to.be.above(0);",
+              "    pm.expect(jsonData.errors[0]).to.have.property('index');",
+              "    pm.expect(jsonData.errors[0]).to.have.property('reason');",
+              "    pm.expect(jsonData.errors[0]).to.have.property('record');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"mixed-valid-{{$timestamp}}.com\", \"status\": \"active\"},\n    {\"type\": \"INVALID_TYPE\", \"value\": \"this-should-fail.com\"},\n    {\"value\": \"missing-type-field.com\"}\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/import",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "import"]
+        }
+      }
+    },
+    {
+      "name": "8c. Bulk Import - All Duplicates",
+      "event": [
+        {
+          "listen": "preRequest",
+          "script": {
+            "exec": [
+              "// Store a known fixed value to re-import",
+              "pm.environment.set('dup_value', 'duplicate-test-fixed.com');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Nothing new imported (all duplicates)\", function () {",
+              "    pm.expect(jsonData.imported).to.eql(0);",
+              "});",
+              "",
+              "pm.test(\"All records counted as duplicates\", function () {",
+              "    pm.expect(jsonData.duplicates).to.be.above(0);",
+              "});",
+              "",
+              "pm.test(\"Total matches sent records\", function () {",
+              "    pm.expect(jsonData.total).to.eql(jsonData.imported + jsonData.skipped + jsonData.duplicates);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"duplicate-test-fixed.com\", \"status\": \"active\"}\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/import",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "import"]
+        }
+      }
     }
   ],
   "variable": [

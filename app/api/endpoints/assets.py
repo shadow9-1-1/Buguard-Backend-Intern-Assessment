@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from app.db.dependencies import get_db
 from typing import Optional
-from app.schemas.asset import AssetCreate, AssetResponse, AssetUpdate, PaginatedAssetResponse
+from app.schemas.asset import AssetCreate, AssetResponse, AssetUpdate, PaginatedAssetResponse, AssetImportRequest, ImportSummary
 from app.models.asset import AssetType, AssetStatus
 from app.services.asset_service import asset_service
 
@@ -88,3 +88,14 @@ def delete_asset(
     Delete an asset (soft delete).
     """
     return asset_service.delete_asset(db=db, asset_id=asset_id)
+@router.post("/import", response_model=ImportSummary, status_code=status.HTTP_200_OK)
+def import_assets(
+    *,
+    db: Session = Depends(get_db),
+    payload: AssetImportRequest,
+):
+    """
+    Bulk import assets from a JSON dataset.
+    Invalid or duplicate records are skipped and reported in the summary.
+    """
+    return asset_service.bulk_import_assets(db=db, records=payload.assets)

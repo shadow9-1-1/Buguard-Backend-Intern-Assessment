@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy.orm import Session
 from app.repositories.asset_repository import asset_repo
-from app.schemas.asset import AssetCreate, AssetUpdate
+from app.schemas.asset import AssetCreate, AssetUpdate, ImportSummary, ImportError
 from fastapi import HTTPException, status
 from typing import Optional, Union
 
@@ -83,5 +83,53 @@ class AssetService:
         db.commit()
         db.refresh(db_asset)
         return db_asset
+
+    def bulk_import_assets(self, db: Session, records: list) -> ImportSummary:
+        total = len(records)
+        imported = 0
+        skipped = 0
+        duplicates = 0
+        errors = []
+
+        for idx, raw in enumerate(records):
+            try:
+                asset_in = AssetCreate.model_validate(raw)
+            except Exception as e:
+                skipped += 1
+                errors.append(ImportError(
+                    index=idx,
+                    record=raw,
+                    reason=f"Validation error: {str(e)}"
+                ))
+                continue
+
+            existing = asset_repo.get_by_type_and_value(db, asset_in.type, asset_in.value)
+            if existing:
+                duplicates += 1
+                errors.append(ImportError(
+                    index=idx,
+                    record=raw,
+                    reason="Duplicate: asset with this type and value already exists"
+                ))
+                continue
+
+            try:
+                asset_repo.create(db, asset_in)
+                imported += 1
+            except Exception as e:
+                skipped += 1
+                errors.append(ImportError(
+                    index=idx,
+                    record=raw,
+                    reason=f"Database error: {str(e)}"
+                ))
+
+        return ImportSummary(
+            total=total,
+            imported=imported,
+            skipped=skipped,
+            duplicates=duplicates,
+            errors=errors
+        )
 
 asset_service = AssetService()

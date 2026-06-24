@@ -44,3 +44,18 @@ class PaginatedAssetResponse(BaseModel):
     total: int
     page: int
     size: int
+
+class ImportError(BaseModel):
+    index: int
+    record: Dict[str, Any]
+    reason: str
+
+class ImportSummary(BaseModel):
+    total: int
+    imported: int
+    skipped: int
+    duplicates: int
+    errors: List[ImportError]
+
+class AssetImportRequest(BaseModel):
+    assets: List[Dict[str, Any]]
