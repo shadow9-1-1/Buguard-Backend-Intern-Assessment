@@ -15,9 +15,23 @@ class AssetBase(BaseModel):
 class AssetCreate(AssetBase):
     pass
 
+class AssetUpdate(BaseModel):
+    type: Optional[AssetType] = None
+    value: Optional[str] = None
+    status: Optional[AssetStatus] = None
+    source: Optional[str] = None
+    tags: Optional[List[str]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
 class AssetResponse(AssetBase):
     id: UUID
     first_seen: datetime
     last_seen: datetime
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+class PaginatedAssetResponse(BaseModel):
+    items: List[AssetResponse]
+    total: int
+    page: int
+    size: int

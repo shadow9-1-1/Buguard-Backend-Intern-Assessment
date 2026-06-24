@@ -1,10 +1,31 @@
 import uuid
 from sqlalchemy.orm import Session
 from app.repositories.asset_repository import asset_repo
-from app.schemas.asset import AssetCreate
+from app.schemas.asset import AssetCreate, AssetUpdate
 from fastapi import HTTPException, status
 
 class AssetService:
+    def get_assets(
+        self, 
+        db: Session, 
+        page: int, 
+        size: int,
+        asset_type: str | None = None,
+        status: str | None = None,
+        tag: str | None = None,
+        search_value: str | None = None,
+    ):
+        items, total = asset_repo.get_multi(
+            db, 
+            page=page, 
+            size=size,
+            asset_type=asset_type,
+            status=status,
+            tag=tag,
+            search_value=search_value
+        )
+        return {"items": items, "total": total, "page": page, "size": size}
+
     def get_asset(self, db: Session, asset_id: uuid.UUID):
         asset = asset_repo.get(db, asset_id)
         if not asset:
@@ -22,5 +43,40 @@ class AssetService:
                 detail="Asset with this type and value already exists"
             )
         return asset_repo.create(db, asset_in)
+
+    def update_asset(self, db: Session, asset_id: uuid.UUID, asset_in: AssetCreate | AssetUpdate, partial: bool = False):
+        db_asset = self.get_asset(db, asset_id)
+        
+        update_data = asset_in.model_dump(exclude_unset=partial)
+        
+        if "type" in update_data or "value" in update_data:
+            new_type = update_data.get("type", db_asset.type)
+            new_value = update_data.get("value", db_asset.value)
+            
+            if new_type != db_asset.type or new_value != db_asset.value:
+                existing = asset_repo.get_by_type_and_value(db, new_type, new_value)
+                if existing and existing.id != asset_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Asset with this type and value already exists"
+                    )
+                    
+        return asset_repo.update(db, db_obj=db_asset, update_data=update_data)
+
+    def delete_asset(self, db: Session, asset_id: uuid.UUID):
+        db_asset = self.get_asset(db, asset_id)
+        from app.models.asset import AssetStatus
+        
+        if db_asset.status == AssetStatus.ARCHIVED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Asset is already deleted"
+            )
+            
+        db_asset.status = AssetStatus.ARCHIVED
+        db.add(db_asset)
+        db.commit()
+        db.refresh(db_asset)
+        return db_asset
 
 asset_service = AssetService()
