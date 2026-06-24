@@ -113,3 +113,15 @@ def record_sighting(
     - Returns 400 if the asset is archived.
     """
     return asset_service.record_sighting(db=db, asset_id=asset_id)
+
+@router.patch("/{asset_id}/stale", response_model=AssetResponse, status_code=status.HTTP_200_OK)
+def mark_asset_stale(
+    asset_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Mark an asset as stale.
+    - Updates status to 'stale'.
+    - Returns 400 if the asset is archived.
+    """
+    return asset_service.mark_stale(db=db, asset_id=asset_id)

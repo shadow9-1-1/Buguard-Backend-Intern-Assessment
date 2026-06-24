@@ -148,4 +148,22 @@ class AssetService:
             )
         return asset_repo.record_sighting(db, db_asset)
 
+    def mark_stale(self, db: Session, asset_id: uuid.UUID):
+        """Mark an asset as stale."""
+        db_asset = self.get_asset(db, asset_id)
+        from app.models.asset import AssetStatus
+        
+        if db_asset.status == AssetStatus.ARCHIVED:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot mark an archived asset as stale"
+            )
+            
+        db_asset.status = AssetStatus.STALE
+        db.add(db_asset)
+        db.commit()
+        db.refresh(db_asset)
+        return db_asset
+
 asset_service = AssetService()

@@ -855,15 +855,10 @@
       ],
       "request": {
         "method": "PATCH",
-        "header": [{"key": "Content-Type", "value": "application/json"}],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"status\": \"stale\"}"
-        },
         "url": {
-          "raw": "{{base_url}}/api/v1/assets/{{lifecycle_asset_id}}",
+          "raw": "{{base_url}}/api/v1/assets/{{lifecycle_asset_id}}/stale",
           "host": ["{{base_url}}"],
-          "path": ["api", "v1", "assets", "{{lifecycle_asset_id}}"]
+          "path": ["api", "v1", "assets", "{{lifecycle_asset_id}}", "stale"]
         }
       }
     },
