@@ -6,6 +6,7 @@ from typing import Optional
 from app.schemas.asset import AssetCreate, AssetResponse, AssetUpdate, PaginatedAssetResponse, AssetImportRequest, ImportSummary
 from app.models.asset import AssetType, AssetStatus
 from app.services.asset_service import asset_service
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -51,6 +52,7 @@ def create_asset(
     *,
     db: Session = Depends(get_db),
     asset_in: AssetCreate,
+    current_user: str = Depends(get_current_user),
 ):
     """
     new asset here 
@@ -62,6 +64,7 @@ def update_asset(
     asset_id: UUID,
     asset_in: AssetCreate,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Update an asset completely.
@@ -73,6 +76,7 @@ def partially_update_asset(
     asset_id: UUID,
     asset_in: AssetUpdate,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Partially update an asset.
@@ -83,6 +87,7 @@ def partially_update_asset(
 def delete_asset(
     asset_id: UUID,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Delete an asset (soft delete).
@@ -93,6 +98,7 @@ def import_assets(
     *,
     db: Session = Depends(get_db),
     payload: AssetImportRequest,
+    current_user: str = Depends(get_current_user),
 ):
     """
     Bulk import assets from a JSON dataset.
@@ -104,6 +110,7 @@ def import_assets(
 def record_sighting(
     asset_id: UUID,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Record a sighting for an asset.
@@ -118,6 +125,7 @@ def record_sighting(
 def mark_asset_stale(
     asset_id: UUID,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Mark an asset as stale.
@@ -162,6 +170,7 @@ def add_tags(
     asset_id: UUID,
     payload: TagRequest,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Add tags to an asset.
@@ -173,6 +182,7 @@ def remove_tag(
     asset_id: UUID,
     tag: str,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Remove a tag from an asset.
