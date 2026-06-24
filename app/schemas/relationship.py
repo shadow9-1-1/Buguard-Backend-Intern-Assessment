@@ -22,3 +22,16 @@ class RelationshipResponse(BaseModel):
 class AssetRelationshipsResponse(BaseModel):
     outgoing: List[RelationshipResponse]
     incoming: List[RelationshipResponse]
+
+class RelatedAsset(BaseModel):
+    relationship_id: UUID
+    type: RelationshipType
+    asset: AssetResponse
+
+    model_config = ConfigDict(from_attributes=True)
+
+class AssetGraphResponse(BaseModel):
+    asset: AssetResponse
+    outgoing: List[RelatedAsset]
+    incoming: List[RelatedAsset]
+

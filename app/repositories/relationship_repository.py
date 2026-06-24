@@ -29,7 +29,20 @@ class RelationshipRepository:
             "outgoing": outgoing,
             "incoming": incoming
         }
-        
+        return {
+            "outgoing": outgoing,
+            "incoming": incoming
+        }
+
+    def get_graph_by_asset_id(self, db: Session, asset_id: uuid.UUID) -> dict:
+        from sqlalchemy.orm import joinedload
+        outgoing = db.query(AssetRelationship).options(joinedload(AssetRelationship.to_asset)).filter(AssetRelationship.from_asset_id == asset_id).all()
+        incoming = db.query(AssetRelationship).options(joinedload(AssetRelationship.from_asset)).filter(AssetRelationship.to_asset_id == asset_id).all()
+        return {
+            "outgoing": outgoing,
+            "incoming": incoming
+        }
+
     def get_specific_relationship(self, db: Session, from_id: uuid.UUID, to_id: uuid.UUID, rel_type: str) -> Optional[AssetRelationship]:
         return db.query(AssetRelationship).filter(
             AssetRelationship.from_asset_id == from_id,

@@ -44,4 +44,35 @@ class RelationshipService:
         
         return relationship_repo.get_by_asset_id(db, asset_id)
 
+    def get_asset_graph(self, db: Session, asset_id: uuid.UUID) -> dict:
+        asset = asset_repo.get(db, asset_id)
+        if not asset:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+            
+        graph = relationship_repo.get_graph_by_asset_id(db, asset_id)
+        
+        outgoing_formatted = [
+            {
+                "relationship_id": rel.id,
+                "type": rel.type,
+                "asset": rel.to_asset
+            }
+            for rel in graph["outgoing"]
+        ]
+        
+        incoming_formatted = [
+            {
+                "relationship_id": rel.id,
+                "type": rel.type,
+                "asset": rel.from_asset
+            }
+            for rel in graph["incoming"]
+        ]
+        
+        return {
+            "asset": asset,
+            "outgoing": outgoing_formatted,
+            "incoming": incoming_formatted
+        }
+
 relationship_service = RelationshipService()

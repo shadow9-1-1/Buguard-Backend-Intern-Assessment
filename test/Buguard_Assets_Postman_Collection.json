@@ -1083,6 +1083,42 @@
           "path": ["api", "v1", "relationships", ""]
         }
       }
+    },
+    {
+      "name": "11f. Relationships - Get Asset Graph",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Returns the root asset\", function () {",
+              "    pm.expect(d.asset.id).to.eql(pm.environment.get('rel_source_id'));",
+              "});",
+              "pm.test(\"Has outgoing related asset\", function () {",
+              "    pm.expect(d.outgoing.length).to.be.above(0);",
+              "    pm.expect(d.outgoing[0].type).to.eql('resolves_to');",
+              "    pm.expect(d.outgoing[0].asset.id).to.eql(pm.environment.get('rel_target_id'));",
+              "});",
+              "pm.test(\"Has empty incoming related assets\", function () {",
+              "    pm.expect(d.incoming.length).to.eql(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{rel_source_id}}/graph",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{rel_source_id}}", "graph"]
+        }
+      }
     }
   ],
   "variable": [

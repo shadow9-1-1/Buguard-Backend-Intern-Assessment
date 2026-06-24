@@ -138,3 +138,16 @@ def get_asset_relationships(
     Retrieve all incoming and outgoing relationships for an asset.
     """
     return relationship_service.get_asset_relationships(db=db, asset_id=asset_id)
+
+from app.schemas.relationship import AssetGraphResponse
+
+@router.get("/{asset_id}/graph", response_model=AssetGraphResponse)
+def get_asset_graph(
+    asset_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve an asset and all its directly related assets.
+    """
+    return relationship_service.get_asset_graph(db=db, asset_id=asset_id)
+
