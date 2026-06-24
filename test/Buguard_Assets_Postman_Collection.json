@@ -534,7 +534,7 @@
               "    pm.expect(jsonData).to.have.property('total');",
               "    pm.expect(jsonData).to.have.property('imported');",
               "    pm.expect(jsonData).to.have.property('skipped');",
-              "    pm.expect(jsonData).to.have.property('duplicates');",
+              "    pm.expect(jsonData).to.have.property('merged');",
               "    pm.expect(jsonData).to.have.property('errors');",
               "});",
               "",
@@ -563,7 +563,7 @@
         "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"bulk-import-1-{{$timestamp}}.com\", \"status\": \"active\", \"tags\": [\"bulk\"]},\n    {\"type\": \"ip\", \"value\": \"192.168.{{$randomInt}}.1\", \"status\": \"active\", \"tags\": [\"bulk\"]},\n    {\"type\": \"url\", \"value\": \"https://bulk-import-3-{{$timestamp}}.com/path\", \"status\": \"active\", \"tags\": [\"bulk\"]}\n  ]\n}"
+          "raw": "{\n  \"assets\": [\n    {\"type\": \"domain\", \"value\": \"bulk-import-1-{{$timestamp}}.com\", \"status\": \"active\", \"tags\": [\"bulk\"]},\n    {\"type\": \"ip_address\", \"value\": \"192.168.{{$randomInt}}.1\", \"status\": \"active\", \"tags\": [\"bulk\"]},\n    {\"type\": \"subdomain\", \"value\": \"bulk-import-3-{{$timestamp}}.com\", \"status\": \"active\", \"tags\": [\"bulk\"]}\n  ]\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/assets/import",
@@ -626,7 +626,7 @@
       "name": "8c. Bulk Import - All Duplicates",
       "event": [
         {
-          "listen": "preRequest",
+          "listen": "prerequest",
           "script": {
             "exec": [
               "// This seeds a fixed asset so the next request can merge into it",
