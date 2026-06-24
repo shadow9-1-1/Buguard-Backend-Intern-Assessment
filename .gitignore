@@ -2,5 +2,5 @@
 app/__pycache__
 *.pyc
 
-migrations/
+
 alembic.ini

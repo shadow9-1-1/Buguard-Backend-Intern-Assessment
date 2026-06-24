@@ -49,8 +49,21 @@ Once the server is running, navigate to:
 
 From there, you can view all schemas, endpoints, and test the API directly from your browser. To test protected endpoints, use the `POST /api/v1/auth/login` endpoint to get a token and paste it into the "Authorize" button at the top right.
 
-## Automated Testing
+## Automated Testing & CI/CD
+![CI Pipeline](https://github.com/shadow9-1-1/Buguard-Backend-Intern-Assessment/actions/workflows/ci.yml/badge.svg)
+
 An exhaustive Postman collection is provided containing **37 tests and over 100 assertions**, covering every requirement.
+
+### Continuous Integration (GitHub Actions)
+This project enforces code quality, reliability, and maintainability via an automated GitHub Actions pipeline (`.github/workflows/ci.yml`).
+The pipeline automatically runs on every `push` and `pull_request` to the `main` branch.
+
+**The CI Pipeline validates:**
+1. **Code Linting & Formatting**: Enforces `black` and `flake8` compliance.
+2. **Build Validation**: Rebuilds the Docker images from scratch to ensure no build regressions.
+3. **Automated Testing**: Automatically spins up the database and API containers, provisions an isolated environment, and executes the full Newman/Postman suite against it.
+
+By configuring GitHub Branch Protection rules, failing any of these automated checks will actively block the PR from being merged.
 
 ### Running via Newman (CLI)
 1. Ensure Node.js is installed on your machine.
