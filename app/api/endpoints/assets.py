@@ -151,3 +151,31 @@ def get_asset_graph(
     """
     return relationship_service.get_asset_graph(db=db, asset_id=asset_id)
 
+from typing import List
+from pydantic import BaseModel
+
+class TagRequest(BaseModel):
+    tags: List[str]
+
+@router.post("/{asset_id}/tags", response_model=AssetResponse)
+def add_tags(
+    asset_id: UUID,
+    payload: TagRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Add tags to an asset.
+    """
+    return asset_service.add_tags(db=db, asset_id=asset_id, tags=payload.tags)
+
+@router.delete("/{asset_id}/tags/{tag}", response_model=AssetResponse)
+def remove_tag(
+    asset_id: UUID,
+    tag: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Remove a tag from an asset.
+    """
+    return asset_service.remove_tag(db=db, asset_id=asset_id, tag=tag)
+

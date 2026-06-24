@@ -166,4 +166,27 @@ class AssetService:
         db.refresh(db_asset)
         return db_asset
 
+    def add_tags(self, db: Session, asset_id: uuid.UUID, tags: list[str]):
+        """Add tags to an asset."""
+        db_asset = self.get_asset(db, asset_id)
+        current_tags = list(db_asset.tags or [])
+        merged_tags = current_tags + [t for t in tags if t not in current_tags]
+        db_asset.tags = merged_tags
+        db.add(db_asset)
+        db.commit()
+        db.refresh(db_asset)
+        return db_asset
+
+    def remove_tag(self, db: Session, asset_id: uuid.UUID, tag: str):
+        """Remove a tag from an asset."""
+        db_asset = self.get_asset(db, asset_id)
+        current_tags = list(db_asset.tags or [])
+        if tag in current_tags:
+            current_tags.remove(tag)
+            db_asset.tags = current_tags
+            db.add(db_asset)
+            db.commit()
+            db.refresh(db_asset)
+        return db_asset
+
 asset_service = AssetService()

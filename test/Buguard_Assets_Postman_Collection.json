@@ -1121,6 +1121,137 @@
       }
     }
   ],
+  "item_search_tags": "--- search and tags tests appended below ---",
+  "item": [
+    {
+      "name": "12a. Search & Tags - Create Asset",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.environment.set('search_tag_asset_id', pm.response.json().id);",
+              "pm.environment.set('search_tag_value', pm.response.json().value);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"domain\",\n  \"value\": \"searchable-{{$timestamp}}.com\",\n  \"status\": \"active\",\n  \"tags\": [\"initial-tag\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "12b. Search & Tags - Partial Search",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Found the asset via partial search\", function () {",
+              "    pm.expect(d.total).to.be.above(0);",
+              "    var found = d.items.find(a => a.id === pm.environment.get('search_tag_asset_id'));",
+              "    pm.expect(found).to.exist;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/?search=searchable-",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""],
+          "query": [
+            {"key": "search", "value": "searchable-"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "12c. Search & Tags - Add Tags",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Tags added successfully\", function () {",
+              "    pm.expect(d.tags).to.include('new-tag-1');",
+              "    pm.expect(d.tags).to.include('new-tag-2');",
+              "    pm.expect(d.tags).to.include('initial-tag');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tags\": [\"new-tag-1\", \"new-tag-2\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{search_tag_asset_id}}/tags",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{search_tag_asset_id}}", "tags"]
+        }
+      }
+    },
+    {
+      "name": "12d. Search & Tags - Remove Tag",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Tag removed successfully\", function () {",
+              "    pm.expect(d.tags).to.not.include('initial-tag');",
+              "    pm.expect(d.tags).to.include('new-tag-1');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{search_tag_asset_id}}/tags/initial-tag",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{search_tag_asset_id}}", "tags", "initial-tag"]
+        }
+      }
+    }
+  ],
   "variable": [
     {
       "key": "base_url",
@@ -1156,6 +1287,14 @@
     },
     {
       "key": "rel_target_id",
+      "value": ""
+    },
+    {
+      "key": "search_tag_asset_id",
+      "value": ""
+    },
+    {
+      "key": "search_tag_value",
       "value": ""
     }
   ]
