@@ -1,9 +1,19 @@
+import uuid
 from sqlalchemy.orm import Session
 from app.repositories.asset_repository import asset_repo
 from app.schemas.asset import AssetCreate
 from fastapi import HTTPException, status
 
 class AssetService:
+    def get_asset(self, db: Session, asset_id: uuid.UUID):
+        asset = asset_repo.get(db, asset_id)
+        if not asset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Asset not found"
+            )
+        return asset
+
     def create_asset(self, db: Session, asset_in: AssetCreate):
         existing = asset_repo.get_by_type_and_value(db, asset_in.type, asset_in.value)
         if existing:

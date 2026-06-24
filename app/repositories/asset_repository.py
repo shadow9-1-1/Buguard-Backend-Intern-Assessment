@@ -1,8 +1,12 @@
+import uuid
 from sqlalchemy.orm import Session
 from app.models.asset import Asset
 from app.schemas.asset import AssetCreate
 
 class AssetRepository:
+    def get(self, db: Session, id: uuid.UUID) -> Asset | None:
+        return db.query(Asset).filter(Asset.id == id).first()
+
     def create(self, db: Session, obj_in: AssetCreate) -> Asset:
         db_obj = Asset(
             type=obj_in.type,
