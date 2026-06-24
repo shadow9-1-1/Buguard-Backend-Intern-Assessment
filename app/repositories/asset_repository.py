@@ -15,6 +15,8 @@ class AssetRepository:
         status: Optional[str] = None,
         tag: Optional[str] = None,
         search_value: Optional[str] = None,
+        sort_by: Optional[str] = "first_seen",
+        sort_order: Optional[str] = "desc",
     ) -> tuple[list[Asset], int]:
         query = db.query(Asset)
         
@@ -28,6 +30,13 @@ class AssetRepository:
             from sqlalchemy import String, cast
             query = query.filter(cast(Asset.tags, String).ilike(f'%"{tag}"%'))
             
+        if hasattr(Asset, sort_by):
+            sort_column = getattr(Asset, sort_by)
+            if sort_order.lower() == "asc":
+                query = query.order_by(sort_column.asc())
+            else:
+                query = query.order_by(sort_column.desc())
+                
         total = query.count()
         
         skip = (page - 1) * size

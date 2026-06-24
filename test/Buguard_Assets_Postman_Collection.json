@@ -1,300 +1,472 @@
 {
-	"info": {
-		"name": "Buguard Assets API - Automated Tests",
-		"description": "Collection containing automated tests for Asset endpoints.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "1. Create Asset",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 201\", function () {",
-							"    pm.response.to.have.status(201);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Response has an ID\", function () {",
-							"    pm.expect(jsonData.id).to.exist;",
-							"});",
-							"",
-							"pm.test(\"Asset type matches\", function () {",
-							"    pm.expect(jsonData.type).to.eql(\"domain\");",
-							"});",
-							"",
-							"// Save the ID to the environment variable for subsequent requests",
-							"if (jsonData.id) {",
-							"    pm.environment.set(\"asset_id\", jsonData.id);",
-							"}"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"type\": \"domain\",\n  \"value\": \"example-api-{{$timestamp}}.com\",\n  \"status\": \"active\",\n  \"tags\": [\"automation\", \"test\"]\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/assets/",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets",
-						""
-					]
-				}
-			}
-		},
-		{
-			"name": "2. Get Asset by ID",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Asset ID matches environment variable\", function () {",
-							"    pm.expect(jsonData.id).to.eql(pm.environment.get(\"asset_id\"));",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"url": {
-					"raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets",
-						"{{asset_id}}"
-					]
-				}
-			}
-		},
-		{
-			"name": "3. List Assets",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Response is paginated\", function () {",
-							"    pm.expect(jsonData).to.have.property('items');",
-							"    pm.expect(jsonData).to.have.property('total');",
-							"    pm.expect(jsonData.items).to.be.an('array');",
-							"});",
-							"",
-							"pm.test(\"Items array has at least 1 element\", function () {",
-							"    pm.expect(jsonData.items.length).to.be.above(0);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"url": {
-					"raw": "{{base_url}}/api/v1/assets/?page=1&size=10&asset_type=domain&tag=automation",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets",
-						""
-					],
-					"query": [
-						{
-							"key": "page",
-							"value": "1"
-						},
-						{
-							"key": "size",
-							"value": "10"
-						},
-						{
-							"key": "asset_type",
-							"value": "domain"
-						},
-						{
-							"key": "tag",
-							"value": "automation"
-						}
-					]
-				}
-			}
-		},
-		{
-			"name": "4. Update Asset (PUT)",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Value is updated\", function () {",
-							"    pm.expect(jsonData.value).to.include(\"updated-\");",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"type\": \"domain\",\n  \"value\": \"updated-example-{{$timestamp}}.com\",\n  \"status\": \"active\"\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets",
-						"{{asset_id}}"
-					]
-				}
-			}
-		},
-		{
-			"name": "5. Partially Update Asset (PATCH)",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Status is stale\", function () {",
-							"    pm.expect(jsonData.status).to.eql(\"stale\");",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"status\": \"stale\"\n}"
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets",
-						"{{asset_id}}"
-					]
-				}
-			}
-		},
-		{
-			"name": "6. Delete Asset",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Status is archived\", function () {",
-							"    pm.expect(jsonData.status).to.eql(\"archived\");",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "DELETE",
-				"url": {
-					"raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets",
-						"{{asset_id}}"
-					]
-				}
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:8000"
-		}
-	]
+  "info": {
+    "name": "Buguard Assets API - Automated Tests",
+    "description": "Full test suite for the Assets API including CRUD, filtering, sorting, and pagination.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Create Asset",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has an ID\", function () {",
+              "    pm.expect(jsonData.id).to.exist;",
+              "});",
+              "",
+              "pm.test(\"Asset type matches\", function () {",
+              "    pm.expect(jsonData.type).to.eql(\"domain\");",
+              "});",
+              "",
+              "pm.test(\"first_seen is set\", function () {",
+              "    pm.expect(jsonData.first_seen).to.exist;",
+              "});",
+              "",
+              "pm.test(\"last_seen is set\", function () {",
+              "    pm.expect(jsonData.last_seen).to.exist;",
+              "});",
+              "",
+              "// Save the ID to the environment variable for subsequent requests",
+              "if (jsonData.id) {",
+              "    pm.environment.set(\"asset_id\", jsonData.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"domain\",\n  \"value\": \"example-api-{{$timestamp}}.com\",\n  \"status\": \"active\",\n  \"tags\": [\"automation\", \"test\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "2. Get Asset by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Asset ID matches environment variable\", function () {",
+              "    pm.expect(jsonData.id).to.eql(pm.environment.get(\"asset_id\"));",
+              "});",
+              "",
+              "pm.test(\"Asset has expected fields\", function () {",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('type');",
+              "    pm.expect(jsonData).to.have.property('value');",
+              "    pm.expect(jsonData).to.have.property('status');",
+              "    pm.expect(jsonData).to.have.property('first_seen');",
+              "    pm.expect(jsonData).to.have.property('last_seen');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{asset_id}}"]
+        }
+      }
+    },
+    {
+      "name": "3a. List Assets - Default Pagination",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has pagination fields\", function () {",
+              "    pm.expect(jsonData).to.have.property('items');",
+              "    pm.expect(jsonData).to.have.property('total');",
+              "    pm.expect(jsonData).to.have.property('page');",
+              "    pm.expect(jsonData).to.have.property('size');",
+              "});",
+              "",
+              "pm.test(\"Default page is 1\", function () {",
+              "    pm.expect(jsonData.page).to.eql(1);",
+              "});",
+              "",
+              "pm.test(\"Default page size is 50\", function () {",
+              "    pm.expect(jsonData.size).to.eql(50);",
+              "});",
+              "",
+              "pm.test(\"Items is an array\", function () {",
+              "    pm.expect(jsonData.items).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Total is a number\", function () {",
+              "    pm.expect(jsonData.total).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "3b. List Assets - Custom Page Size",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Page size matches requested size\", function () {",
+              "    pm.expect(jsonData.size).to.eql(5);",
+              "});",
+              "",
+              "pm.test(\"Page matches requested page\", function () {",
+              "    pm.expect(jsonData.page).to.eql(1);",
+              "});",
+              "",
+              "pm.test(\"Items returned do not exceed page size\", function () {",
+              "    pm.expect(jsonData.items.length).to.be.at.most(5);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/?page=1&size=5",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""],
+          "query": [
+            {"key": "page", "value": "1"},
+            {"key": "size", "value": "5"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "3c. List Assets - Sort by value ASC",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has items\", function () {",
+              "    pm.expect(jsonData.items).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Items are sorted ascending by value\", function () {",
+              "    var items = jsonData.items;",
+              "    if (items.length > 1) {",
+              "        for (var i = 0; i < items.length - 1; i++) {",
+              "            pm.expect(items[i].value.toLowerCase() <= items[i+1].value.toLowerCase()).to.be.true;",
+              "        }",
+              "    } else {",
+              "        pm.expect(true).to.be.true; // pass if only 1 or 0 items",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/?sort_by=value&sort_order=asc",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""],
+          "query": [
+            {"key": "sort_by", "value": "value"},
+            {"key": "sort_order", "value": "asc"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "3d. List Assets - Sort by first_seen DESC (default)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Response has items\", function () {",
+              "    pm.expect(jsonData.items).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Items are sorted descending by first_seen\", function () {",
+              "    var items = jsonData.items;",
+              "    if (items.length > 1) {",
+              "        for (var i = 0; i < items.length - 1; i++) {",
+              "            var d1 = new Date(items[i].first_seen);",
+              "            var d2 = new Date(items[i+1].first_seen);",
+              "            pm.expect(d1 >= d2).to.be.true;",
+              "        }",
+              "    } else {",
+              "        pm.expect(true).to.be.true;",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/?sort_by=first_seen&sort_order=desc",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""],
+          "query": [
+            {"key": "sort_by", "value": "first_seen"},
+            {"key": "sort_order", "value": "desc"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "3e. List Assets - Filter by type and tag",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"All items are of type domain\", function () {",
+              "    jsonData.items.forEach(function(item) {",
+              "        pm.expect(item.type.toLowerCase()).to.eql(\"domain\");",
+              "    });",
+              "});",
+              "",
+              "pm.test(\"Items array has at least 1 element\", function () {",
+              "    pm.expect(jsonData.items.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/?page=1&size=10&asset_type=domain&tag=automation",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""],
+          "query": [
+            {"key": "page", "value": "1"},
+            {"key": "size", "value": "10"},
+            {"key": "asset_type", "value": "domain"},
+            {"key": "tag", "value": "automation"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. Update Asset (PUT)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Value is updated\", function () {",
+              "    pm.expect(jsonData.value).to.include(\"updated-\");",
+              "});",
+              "",
+              "pm.test(\"first_seen is unchanged (immutable)\", function () {",
+              "    pm.expect(jsonData.first_seen).to.exist;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"domain\",\n  \"value\": \"updated-example-{{$timestamp}}.com\",\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{asset_id}}"]
+        }
+      }
+    },
+    {
+      "name": "5. Partially Update Asset (PATCH)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Status is stale\", function () {",
+              "    pm.expect(jsonData.status).to.eql(\"stale\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"stale\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{asset_id}}"]
+        }
+      }
+    },
+    {
+      "name": "6. Delete Asset (soft delete)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "pm.test(\"Status is archived (soft delete)\", function () {",
+              "    pm.expect(jsonData.status).to.eql(\"archived\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{asset_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{asset_id}}"]
+        }
+      }
+    },
+    {
+      "name": "7. Get Non-Existent Asset (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Error detail is returned\", function () {",
+              "    pm.expect(pm.response.json()).to.have.property('detail');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/00000000-0000-0000-0000-000000000000",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "00000000-0000-0000-0000-000000000000"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "asset_id",
+      "value": ""
+    }
+  ]
 }

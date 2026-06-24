@@ -18,9 +18,11 @@ def list_assets(
     status: Optional[AssetStatus] = None,
     tag: Optional[str] = None,
     search: Optional[str] = None,
+    sort_by: Optional[str] = "first_seen",
+    sort_order: Optional[str] = "desc",
 ):
     """
-    List assets with filtering and pagination.
+    List assets with filtering, sorting, and pagination.
     """
     return asset_service.get_assets(
         db=db,
@@ -29,7 +31,9 @@ def list_assets(
         asset_type=asset_type,
         status=status,
         tag=tag,
-        search_value=search
+        search_value=search,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
 
 @router.get("/{asset_id}", response_model=AssetResponse)

@@ -15,6 +15,8 @@ class AssetService:
         status: Optional[str] = None,
         tag: Optional[str] = None,
         search_value: Optional[str] = None,
+        sort_by: Optional[str] = "first_seen",
+        sort_order: Optional[str] = "desc",
     ):
         items, total = asset_repo.get_multi(
             db, 
@@ -23,7 +25,9 @@ class AssetService:
             asset_type=asset_type,
             status=status,
             tag=tag,
-            search_value=search_value
+            search_value=search_value,
+            sort_by=sort_by,
+            sort_order=sort_order
         )
         return {"items": items, "total": total, "page": page, "size": size}
 
