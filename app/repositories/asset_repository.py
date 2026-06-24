@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy.orm import Session
 from app.models.asset import Asset
 from app.schemas.asset import AssetCreate
+from typing import Optional
 
 class AssetRepository:
     def get_multi(
@@ -10,10 +11,10 @@ class AssetRepository:
         *, 
         page: int = 1, 
         size: int = 50,
-        asset_type: str | None = None,
-        status: str | None = None,
-        tag: str | None = None,
-        search_value: str | None = None,
+        asset_type: Optional[str] = None,
+        status: Optional[str] = None,
+        tag: Optional[str] = None,
+        search_value: Optional[str] = None,
     ) -> tuple[list[Asset], int]:
         query = db.query(Asset)
         
@@ -34,7 +35,7 @@ class AssetRepository:
         
         return items, total
 
-    def get(self, db: Session, id: uuid.UUID) -> Asset | None:
+    def get(self, db: Session, id: uuid.UUID) -> Optional[Asset]:
         return db.query(Asset).filter(Asset.id == id).first()
 
     def create(self, db: Session, obj_in: AssetCreate) -> Asset:
@@ -44,7 +45,7 @@ class AssetRepository:
             status=obj_in.status,
             source=obj_in.source,
             tags=obj_in.tags,
-            metadata=obj_in.metadata,
+            asset_metadata=obj_in.asset_metadata,
         )
         db.add(db_obj)
         db.commit()
@@ -60,7 +61,7 @@ class AssetRepository:
         db.refresh(db_obj)
         return db_obj
 
-    def get_by_type_and_value(self, db: Session, asset_type: str, value: str) -> Asset | None:
+    def get_by_type_and_value(self, db: Session, asset_type: str, value: str) -> Optional[Asset]:
         return db.query(Asset).filter(Asset.type == asset_type, Asset.value == value).first()
 
 asset_repo = AssetRepository()

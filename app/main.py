@@ -4,6 +4,11 @@ from app.api.v1 import api_router
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
+from app.db.base import Base
+from app.db.session import engine
+from app.models import asset as _asset  # Ensure models are loaded before create_all
+Base.metadata.create_all(bind=engine)
+
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")

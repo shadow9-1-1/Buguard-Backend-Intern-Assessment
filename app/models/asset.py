@@ -28,7 +28,7 @@ class Asset(Base):
     status = Column(SQLAlchemyEnum(AssetStatus), default=AssetStatus.ACTIVE, nullable=False, index=True)
     source = Column(String, index=True)
     tags = Column(JSON, default=list)
-    metadata = Column(JSON, default=dict)
+    asset_metadata = Column('metadata', JSON, default=dict)
     first_seen = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_seen = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

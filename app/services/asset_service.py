@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.repositories.asset_repository import asset_repo
 from app.schemas.asset import AssetCreate, AssetUpdate
 from fastapi import HTTPException, status
+from typing import Optional, Union
 
 class AssetService:
     def get_assets(
@@ -10,10 +11,10 @@ class AssetService:
         db: Session, 
         page: int, 
         size: int,
-        asset_type: str | None = None,
-        status: str | None = None,
-        tag: str | None = None,
-        search_value: str | None = None,
+        asset_type: Optional[str] = None,
+        status: Optional[str] = None,
+        tag: Optional[str] = None,
+        search_value: Optional[str] = None,
     ):
         items, total = asset_repo.get_multi(
             db, 
@@ -44,7 +45,7 @@ class AssetService:
             )
         return asset_repo.create(db, asset_in)
 
-    def update_asset(self, db: Session, asset_id: uuid.UUID, asset_in: AssetCreate | AssetUpdate, partial: bool = False):
+    def update_asset(self, db: Session, asset_id: uuid.UUID, asset_in: Union[AssetCreate, AssetUpdate], partial: bool = False):
         db_asset = self.get_asset(db, asset_id)
         
         update_data = asset_in.model_dump(exclude_unset=partial)
