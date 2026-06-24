@@ -33,6 +33,7 @@ jobs:
   build-and-test:
     name: Build & Run API Tests
     runs-on: ubuntu-latest
+    environment: production
     needs: lint
     steps:
       - name: Check out repository
