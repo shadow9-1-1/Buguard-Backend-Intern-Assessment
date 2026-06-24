@@ -926,6 +926,165 @@
       }
     }
   ],
+  "item_relationships": "--- relationship tests appended below ---",
+  "item": [
+    {
+      "name": "11a. Relationships - Create Source Asset",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.environment.set('rel_source_id', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"domain\",\n  \"value\": \"source-{{$timestamp}}.com\",\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "11b. Relationships - Create Target Asset",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.environment.set('rel_target_id', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"ip_address\",\n  \"value\": \"10.0.0.{{$randomInt}}\",\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "11c. Relationships - Create Relationship",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Relationship fields are correct\", function () {",
+              "    pm.expect(d.from_asset_id).to.eql(pm.environment.get('rel_source_id'));",
+              "    pm.expect(d.to_asset_id).to.eql(pm.environment.get('rel_target_id'));",
+              "    pm.expect(d.type).to.eql('resolves_to');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"from_asset_id\": \"{{rel_source_id}}\",\n  \"to_asset_id\": \"{{rel_target_id}}\",\n  \"type\": \"resolves_to\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/relationships/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "relationships", ""]
+        }
+      }
+    },
+    {
+      "name": "11d. Relationships - Get Asset Relationships",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var d = pm.response.json();",
+              "pm.test(\"Has outgoing relationship\", function () {",
+              "    pm.expect(d.outgoing.length).to.be.above(0);",
+              "    pm.expect(d.outgoing[0].type).to.eql('resolves_to');",
+              "});",
+              "pm.test(\"Has empty incoming relationships\", function () {",
+              "    pm.expect(d.incoming.length).to.eql(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/{{rel_source_id}}/relationships",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "{{rel_source_id}}", "relationships"]
+        }
+      }
+    },
+    {
+      "name": "11e. Relationships - Invalid Relationship (Self)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"from_asset_id\": \"{{rel_source_id}}\",\n  \"to_asset_id\": \"{{rel_source_id}}\",\n  \"type\": \"resolves_to\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/relationships/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "relationships", ""]
+        }
+      }
+    }
+  ],
   "variable": [
     {
       "key": "base_url",
@@ -953,6 +1112,14 @@
     },
     {
       "key": "lifecycle_value",
+      "value": ""
+    },
+    {
+      "key": "rel_source_id",
+      "value": ""
+    },
+    {
+      "key": "rel_target_id",
       "value": ""
     }
   ]

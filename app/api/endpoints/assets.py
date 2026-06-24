@@ -125,3 +125,16 @@ def mark_asset_stale(
     - Returns 400 if the asset is archived.
     """
     return asset_service.mark_stale(db=db, asset_id=asset_id)
+
+from app.schemas.relationship import AssetRelationshipsResponse
+from app.services.relationship_service import relationship_service
+
+@router.get("/{asset_id}/relationships", response_model=AssetRelationshipsResponse)
+def get_asset_relationships(
+    asset_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve all incoming and outgoing relationships for an asset.
+    """
+    return relationship_service.get_asset_relationships(db=db, asset_id=asset_id)
