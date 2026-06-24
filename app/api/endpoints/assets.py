@@ -3,12 +3,20 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from app.db.dependencies import get_db
 from typing import Optional
-from app.schemas.asset import AssetCreate, AssetResponse, AssetUpdate, PaginatedAssetResponse, AssetImportRequest, ImportSummary
+from app.schemas.asset import (
+    AssetCreate,
+    AssetResponse,
+    AssetUpdate,
+    PaginatedAssetResponse,
+    AssetImportRequest,
+    ImportSummary,
+)
 from app.models.asset import AssetType, AssetStatus
 from app.services.asset_service import asset_service
 from app.api.deps import get_current_user
 
 router = APIRouter()
+
 
 @router.get("/", response_model=PaginatedAssetResponse)
 def list_assets(
@@ -34,8 +42,9 @@ def list_assets(
         tag=tag,
         search_value=search,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
     )
+
 
 @router.get("/{asset_id}", response_model=AssetResponse)
 def get_asset(
@@ -47,6 +56,7 @@ def get_asset(
     """
     return asset_service.get_asset(db=db, asset_id=asset_id)
 
+
 @router.post("/", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
 def create_asset(
     *,
@@ -55,9 +65,10 @@ def create_asset(
     current_user: str = Depends(get_current_user),
 ):
     """
-    new asset here 
+    new asset here
     """
     return asset_service.create_asset(db=db, asset_in=asset_in)
+
 
 @router.put("/{asset_id}", response_model=AssetResponse)
 def update_asset(
@@ -69,7 +80,10 @@ def update_asset(
     """
     Update an asset completely.
     """
-    return asset_service.update_asset(db=db, asset_id=asset_id, asset_in=asset_in, partial=False)
+    return asset_service.update_asset(
+        db=db, asset_id=asset_id, asset_in=asset_in, partial=False
+    )
+
 
 @router.patch("/{asset_id}", response_model=AssetResponse)
 def partially_update_asset(
@@ -81,7 +95,10 @@ def partially_update_asset(
     """
     Partially update an asset.
     """
-    return asset_service.update_asset(db=db, asset_id=asset_id, asset_in=asset_in, partial=True)
+    return asset_service.update_asset(
+        db=db, asset_id=asset_id, asset_in=asset_in, partial=True
+    )
+
 
 @router.delete("/{asset_id}", response_model=AssetResponse)
 def delete_asset(
@@ -93,6 +110,8 @@ def delete_asset(
     Delete an asset (soft delete).
     """
     return asset_service.delete_asset(db=db, asset_id=asset_id)
+
+
 @router.post("/import", response_model=ImportSummary, status_code=status.HTTP_200_OK)
 def import_assets(
     *,
@@ -106,7 +125,10 @@ def import_assets(
     """
     return asset_service.bulk_import_assets(db=db, records=payload.assets)
 
-@router.post("/{asset_id}/sight", response_model=AssetResponse, status_code=status.HTTP_200_OK)
+
+@router.post(
+    "/{asset_id}/sight", response_model=AssetResponse, status_code=status.HTTP_200_OK
+)
 def record_sighting(
     asset_id: UUID,
     db: Session = Depends(get_db),
@@ -121,7 +143,10 @@ def record_sighting(
     """
     return asset_service.record_sighting(db=db, asset_id=asset_id)
 
-@router.patch("/{asset_id}/stale", response_model=AssetResponse, status_code=status.HTTP_200_OK)
+
+@router.patch(
+    "/{asset_id}/stale", response_model=AssetResponse, status_code=status.HTTP_200_OK
+)
 def mark_asset_stale(
     asset_id: UUID,
     db: Session = Depends(get_db),
@@ -134,8 +159,10 @@ def mark_asset_stale(
     """
     return asset_service.mark_stale(db=db, asset_id=asset_id)
 
+
 from app.schemas.relationship import AssetRelationshipsResponse
 from app.services.relationship_service import relationship_service
+
 
 @router.get("/{asset_id}/relationships", response_model=AssetRelationshipsResponse)
 def get_asset_relationships(
@@ -147,7 +174,9 @@ def get_asset_relationships(
     """
     return relationship_service.get_asset_relationships(db=db, asset_id=asset_id)
 
+
 from app.schemas.relationship import AssetGraphResponse
+
 
 @router.get("/{asset_id}/graph", response_model=AssetGraphResponse)
 def get_asset_graph(
@@ -159,11 +188,14 @@ def get_asset_graph(
     """
     return relationship_service.get_asset_graph(db=db, asset_id=asset_id)
 
+
 from typing import List
 from pydantic import BaseModel
 
+
 class TagRequest(BaseModel):
     tags: List[str]
+
 
 @router.post("/{asset_id}/tags", response_model=AssetResponse)
 def add_tags(
@@ -177,6 +209,7 @@ def add_tags(
     """
     return asset_service.add_tags(db=db, asset_id=asset_id, tags=payload.tags)
 
+
 @router.delete("/{asset_id}/tags/{tag}", response_model=AssetResponse)
 def remove_tag(
     asset_id: UUID,
@@ -188,4 +221,3 @@ def remove_tag(
     Remove a tag from an asset.
     """
     return asset_service.remove_tag(db=db, asset_id=asset_id, tag=tag)
-

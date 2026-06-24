@@ -5,6 +5,7 @@ from app.core.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
 router = APIRouter()
 
+
 @router.post("/login")
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     # Dummy authentication check

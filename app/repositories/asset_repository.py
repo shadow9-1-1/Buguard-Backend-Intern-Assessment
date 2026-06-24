@@ -5,12 +5,13 @@ from app.models.asset import Asset, AssetStatus
 from app.schemas.asset import AssetCreate
 from typing import Optional
 
+
 class AssetRepository:
     def get_multi(
-        self, 
-        db: Session, 
-        *, 
-        page: int = 1, 
+        self,
+        db: Session,
+        *,
+        page: int = 1,
         size: int = 50,
         asset_type: Optional[str] = None,
         status: Optional[str] = None,
@@ -20,7 +21,7 @@ class AssetRepository:
         sort_order: Optional[str] = "desc",
     ) -> tuple[list[Asset], int]:
         query = db.query(Asset)
-        
+
         if asset_type:
             query = query.filter(Asset.type == asset_type)
         if status:
@@ -29,20 +30,21 @@ class AssetRepository:
             query = query.filter(Asset.value.ilike(f"%{search_value}%"))
         if tag:
             from sqlalchemy import String, cast
+
             query = query.filter(cast(Asset.tags, String).ilike(f'%"{tag}"%'))
-            
+
         if hasattr(Asset, sort_by):
             sort_column = getattr(Asset, sort_by)
             if sort_order.lower() == "asc":
                 query = query.order_by(sort_column.asc())
             else:
                 query = query.order_by(sort_column.desc())
-                
+
         total = query.count()
-        
+
         skip = (page - 1) * size
         items = query.offset(skip).limit(size).all()
-        
+
         return items, total
 
     def get(self, db: Session, id: uuid.UUID) -> Optional[Asset]:
@@ -71,10 +73,18 @@ class AssetRepository:
         db.refresh(db_obj)
         return db_obj
 
-    def get_by_type_and_value(self, db: Session, asset_type: str, value: str) -> Optional[Asset]:
-        return db.query(Asset).filter(Asset.type == asset_type, Asset.value == value).first()
+    def get_by_type_and_value(
+        self, db: Session, asset_type: str, value: str
+    ) -> Optional[Asset]:
+        return (
+            db.query(Asset)
+            .filter(Asset.type == asset_type, Asset.value == value)
+            .first()
+        )
 
-    def merge_duplicate(self, db: Session, db_obj: Asset, incoming: AssetCreate) -> Asset:
+    def merge_duplicate(
+        self, db: Session, db_obj: Asset, incoming: AssetCreate
+    ) -> Asset:
         """Merge tags (union) and metadata (incoming overwrites), reactivate if stale, and refresh last_seen."""
         # Merge tags: union of both lists, preserving order, deduplicating
         existing_tags = list(db_obj.tags or [])
@@ -108,5 +118,6 @@ class AssetRepository:
         db.commit()
         db.refresh(db_obj)
         return db_obj
+
 
 asset_repo = AssetRepository()

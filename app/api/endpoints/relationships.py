@@ -7,7 +7,10 @@ from app.api.deps import get_current_user
 
 router = APIRouter()
 
-@router.post("/", response_model=RelationshipResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/", response_model=RelationshipResponse, status_code=status.HTTP_201_CREATED
+)
 def create_relationship(
     *,
     db: Session = Depends(get_db),

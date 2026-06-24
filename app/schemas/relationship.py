@@ -1,14 +1,16 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 from datetime import datetime
 from app.models.relationship import RelationshipType
 from app.schemas.asset import AssetResponse
 
+
 class RelationshipCreate(BaseModel):
     from_asset_id: UUID
     to_asset_id: UUID
     type: RelationshipType
+
 
 class RelationshipResponse(BaseModel):
     id: UUID
@@ -19,9 +21,11 @@ class RelationshipResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class AssetRelationshipsResponse(BaseModel):
     outgoing: List[RelationshipResponse]
     incoming: List[RelationshipResponse]
+
 
 class RelatedAsset(BaseModel):
     relationship_id: UUID
@@ -30,8 +34,8 @@ class RelatedAsset(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class AssetGraphResponse(BaseModel):
     asset: AssetResponse
     outgoing: List[RelatedAsset]
     incoming: List[RelatedAsset]
-
