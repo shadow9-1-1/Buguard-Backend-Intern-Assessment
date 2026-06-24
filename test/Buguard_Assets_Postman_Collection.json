@@ -498,8 +498,10 @@
               "    pm.response.to.have.status(404);",
               "});",
               "",
-              "pm.test(\"Error detail is returned\", function () {",
-              "    pm.expect(pm.response.json()).to.have.property('detail');",
+              "pm.test(\"Error response has standard format\", function () {",
+              "    var e = pm.response.json().error;",
+              "    pm.expect(e).to.have.property('code');",
+              "    pm.expect(e).to.have.property('message');",
               "});"
             ],
             "type": "text/javascript"
@@ -929,8 +931,8 @@
               "pm.test(\"Status code is 400 for archived asset\", function () {",
               "    pm.response.to.have.status(400);",
               "});",
-              "pm.test(\"Error detail mentions archived\", function () {",
-              "    pm.expect(pm.response.json().detail.toLowerCase()).to.include('archived');",
+              "pm.test(\"Error message mentions archived\", function () {",
+              "    pm.expect(pm.response.json().error.message.toLowerCase()).to.include('archived');",
               "});"
             ],
             "type": "text/javascript"
@@ -1356,6 +1358,75 @@
       "request": {
         "auth": {"type": "noauth"},
         "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", ""]
+        }
+      }
+    },
+    {
+      "name": "14a. Error Handling - 404 Not Found Format",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "var e = pm.response.json().error;",
+              "pm.test(\"Error has standard format\", function () {",
+              "    pm.expect(e).to.have.property('code');",
+              "    pm.expect(e).to.have.property('message');",
+              "    pm.expect(e).to.have.property('details');",
+              "});",
+              "pm.test(\"Error code is not_found\", function () {",
+              "    pm.expect(e.code).to.eql('not_found');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {"type": "noauth"},
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/00000000-0000-0000-0000-000000000000",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "assets", "00000000-0000-0000-0000-000000000000"]
+        }
+      }
+    },
+    {
+      "name": "14b. Error Handling - 422 Validation Format",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 422\", function () {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "var e = pm.response.json().error;",
+              "pm.test(\"Error has standard validation format\", function () {",
+              "    pm.expect(e.code).to.eql('validation_error');",
+              "    pm.expect(e.message).to.eql('Invalid request parameters');",
+              "    pm.expect(e.details).to.be.an('array').with.length.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"INVALID_TYPE\",\n  \"value\": \"test.com\"\n}"
+        },
         "url": {
           "raw": "{{base_url}}/api/v1/assets/",
           "host": ["{{base_url}}"],
