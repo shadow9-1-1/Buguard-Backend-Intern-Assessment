@@ -770,10 +770,8 @@
           ]
         }
       }
-    }
-  ],
-  "item_lifecycle": "--- lifecycle tests appended below ---",
-  "item": [
+    },
+  
     {
       "name": "10a. Lifecycle - Create asset and capture first_seen",
       "event": [
@@ -983,10 +981,8 @@
           "path": ["api", "v1", "assets", "import"]
         }
       }
-    }
-  ],
-  "item_relationships": "--- relationship tests appended below ---",
-  "item": [
+    },
+  
     {
       "name": "11a. Relationships - Create Source Asset",
       "event": [
@@ -1178,10 +1174,8 @@
           "path": ["api", "v1", "assets", "{{rel_source_id}}", "graph"]
         }
       }
-    }
-  ],
-  "item_search_tags": "--- search and tags tests appended below ---",
-  "item": [
+    },
+  
     {
       "name": "12a. Search & Tags - Create Asset",
       "event": [
