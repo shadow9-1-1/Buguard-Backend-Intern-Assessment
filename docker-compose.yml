@@ -3,6 +3,7 @@ version: '3.8'
 services:
   backend:
     build: .
+    restart: on-failure
     ports:
       - "8000:8000"
     volumes:

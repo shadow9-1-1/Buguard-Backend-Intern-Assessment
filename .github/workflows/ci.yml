@@ -65,6 +65,10 @@ jobs:
       - name: Run Postman Tests
         run: newman run test/Buguard_Assets_Postman_Collection.json
 
+      - name: Dump Docker Logs on Failure
+        if: failure()
+        run: docker compose logs backend
+
       - name: Shut down Docker Containers
         if: always()
         run: docker compose down
